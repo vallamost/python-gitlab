@@ -15,6 +15,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import pytest
+import requests
+import responses
+
 from gitlab import utils
 
 
@@ -40,3 +44,47 @@ def test_sanitized_url():
     src = "http://localhost/foo.bar.baz"
     dest = "http://localhost/foo%2Ebar%2Ebaz"
     assert dest == utils.sanitized_url(src)
+
+
+@responses.activate
+def test_response_content(capsys):
+    responses.add(
+        method="GET",
+        url="https://example.com",
+        status=200,
+        body="test",
+        content_type="application/octet-stream",
+    )
+
+    resp = requests.get("https://example.com", stream=True)
+    utils.response_content(resp, streamed=True, action=None, chunk_size=1024)
+
+    captured = capsys.readouterr()
+    assert "test" in captured.out
+
+
+@pytest.mark.parametrize(
+    "source,expected",
+    [
+        ({"a": "", "b": "spam", "c": None}, {"a": "", "b": "spam", "c": None}),
+        ({"a": "", "b": {"c": "spam"}}, {"a": "", "b[c]": "spam"}),
+    ],
+)
+def test_copy_dict(source, expected):
+    dest = {}
+
+    utils.copy_dict(dest, source)
+    assert dest == expected
+
+
+@pytest.mark.parametrize(
+    "dictionary,expected",
+    [
+        ({"a": None, "b": "spam"}, {"b": "spam"}),
+        ({"a": "", "b": "spam"}, {"a": "", "b": "spam"}),
+        ({"a": None, "b": None}, {}),
+    ],
+)
+def test_remove_none_from_dict(dictionary, expected):
+    result = utils.remove_none_from_dict(dictionary)
+    assert result == expected
