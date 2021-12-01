@@ -124,7 +124,7 @@ class ProjectGroupManager(ListMixin, RESTManager):
         "shared_min_access_level",
         "shared_visible_only",
     )
-    _types = {"skip_groups": types.ListAttribute}
+    _types = {"skip_groups": types.ArrayAttribute}
 
 
 class Project(RefreshMixin, SaveMixin, ObjectDeleteMixin, RepositoryMixin, RESTObject):
@@ -790,7 +790,7 @@ class ProjectManager(CRUDMixin, RESTManager):
         "with_merge_requests_enabled",
         "with_programming_language",
     )
-    _types = {"avatar": types.ImageAttribute, "topic": types.ListAttribute}
+    _types = {"avatar": types.ImageAttribute, "topic": types.CsvStringAttribute}
 
     def get(self, id: Union[str, int], lazy: bool = False, **kwargs: Any) -> Project:
         return cast(Project, super().get(id=id, lazy=lazy, **kwargs))
